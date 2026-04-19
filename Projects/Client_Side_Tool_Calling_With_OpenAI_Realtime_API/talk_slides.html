@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Voice Agents with GPT Realtime Model</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fira+Code:wght@500&display=swap');
+
+  :root {
+    --r-background-color: #FFF9F0;
+    --r-main-font: 'Inter', sans-serif;
+    --r-heading-font: 'Inter', sans-serif;
+    --r-main-font-size: 42px;
+    --r-heading1-size: 2.8em;
+    --r-heading2-size: 2.2em;
+    --r-heading3-size: 1.6em;
+    --r-main-color: #1a1a2e;
+    --r-heading-color: #1a1a2e;
+    --r-link-color: #e94560;
+  }
+
+  .reveal { font-weight: 700; }
+
+  .reveal h1, .reveal h2, .reveal h3 {
+    font-weight: 900;
+    line-height: 1.15;
+    text-transform: none;
+  }
+
+  /* Minimal padding — use full screen */
+  .reveal .slides section {
+    padding: 16px 10px 30px 10px;
+    box-sizing: border-box;
+  }
+
+  /* Big question slides */
+  .big-question {
+    font-size: 2.2em !important;
+    font-weight: 900 !important;
+    line-height: 1.3 !important;
+    color: #1a1a2e !important;
+  }
+
+  .big-question .emoji {
+    font-size: 1.2em;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  /* Accent colors */
+  .pop-orange { color: #FF6B35; }
+  .pop-pink { color: #E94560; }
+  .pop-blue { color: #0077B6; }
+  .pop-green { color: #2DC653; }
+  .pop-purple { color: #7B2D8E; }
+
+  /* Highlight box */
+  .highlight-box {
+    background: #FF6B35;
+    color: white;
+    padding: 22px 40px;
+    border-radius: 20px;
+    display: inline-block;
+    font-size: 1.2em;
+    font-weight: 900;
+    margin: 12px 0;
+  }
+  .highlight-box.pink { background: #E94560; }
+  .highlight-box.blue { background: #0077B6; }
+  .highlight-box.green { background: #2DC653; }
+  .highlight-box.purple { background: #7B2D8E; }
+
+  /* Bullet list */
+  .reveal ul { list-style: none; padding: 0; }
+  .reveal ul li {
+    font-size: 0.85em;
+    margin: 14px 0;
+    padding-left: 36px;
+    position: relative;
+  }
+  .reveal ul li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: #FF6B35;
+    font-weight: 900;
+    font-size: 1.2em;
+  }
+
+  /* Slide-specific backgrounds */
+  .reveal .slides section[data-bg-warm] { background: #FFF3E6; }
+  .reveal .slides section[data-bg-cool] { background: #E8F4FD; }
+  .reveal .slides section[data-bg-mint] { background: #E6F9EE; }
+  .reveal .slides section[data-bg-lavender] { background: #F3E8FD; }
+  .reveal .slides section[data-bg-peach] { background: #FFE8E0; }
+
+  /* Analogy side-by-side */
+  .analogy-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: stretch;
+    margin-top: 16px;
+  }
+  .analogy-card {
+    background: white;
+    border-radius: 22px;
+    padding: 30px 34px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.08);
+    flex: 1;
+    max-width: 420px;
+  }
+  .analogy-card .icon { font-size: 2em; margin-bottom: 4px; }
+  .analogy-card .label {
+    font-size: 1.1em;
+    font-weight: 900;
+    margin: 4px 0;
+  }
+  .analogy-card .desc {
+    font-size: 0.6em;
+    color: #666;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* Pipeline — single horizontal row */
+  .pipeline-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 20px 0;
+    flex-wrap: nowrap;
+  }
+  .pipeline-row .p-box {
+    background: white;
+    border: 4px solid #FF6B35;
+    border-radius: 18px;
+    padding: 22px 22px;
+    font-weight: 900;
+    text-align: center;
+    min-width: 120px;
+  }
+  .pipeline-row .p-box .p-icon { font-size: 1.8em; display: block; margin-bottom: 6px; }
+  .pipeline-row .p-box .p-label { font-size: 0.75em; }
+  .pipeline-row .p-box .p-desc { font-size: 0.45em; color: #888; font-weight: 700; margin-top: 6px; }
+  .pipeline-row .p-arrow {
+    font-size: 1.8em;
+    color: #FF6B35;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .pipeline-row .p-box.p-highlight {
+    background: #FF6B35;
+    color: white;
+    border-color: #FF6B35;
+  }
+  .pipeline-row .p-box.p-highlight .p-desc { color: rgba(255,255,255,0.7); }
+
+  /* Session timeline */
+  .session-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 900px;
+    margin: 14px auto 0 auto;
+  }
+  .s-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .s-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.4em;
+    font-weight: 900;
+    color: white;
+    flex-shrink: 0;
+  }
+  .s-bar {
+    flex: 1;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 0.46em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .s-bar .s-dir {
+    font-size: 1.2em;
+    flex-shrink: 0;
+  }
+  .s-send { background: #FFE8E0; color: #FF6B35; }
+  .s-recv { background: #E8F4FD; color: #0077B6; }
+  .s-tool { background: #E6F9EE; color: #2DC653; }
+
+  /* JSON display */
+  .json-block {
+    background: white;
+    border: 3px solid #eee;
+    border-radius: 16px;
+    padding: 18px 26px;
+    text-align: left;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.44em;
+    font-weight: 500;
+    line-height: 1.55;
+    color: #333;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.05);
+    max-width: 860px;
+    margin: 12px auto 0 auto;
+    white-space: pre;
+  }
+  .json-block .jk { color: #0077B6; }
+  .json-block .js { color: #2DC653; }
+  .json-block .jn { color: #FF6B35; }
+  .json-block .jc { color: #aaa; }
+
+  /* Event slide layout */
+  .event-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+  .event-dir-badge {
+    font-size: 0.45em;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 900;
+  }
+  .badge-send { background: #FFE8E0; color: #FF6B35; }
+  .badge-recv { background: #E8F4FD; color: #0077B6; }
+  .badge-tool { background: #E6F9EE; color: #2DC653; }
+
+  /* Slide number */
+  .reveal .slide-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 14px;
+    color: #ccc;
+    background: none;
+    right: auto;
+    left: 16px;
+    bottom: 10px;
+  }
+
+  /* Hide navigation arrows */
+  .reveal .controls { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="reveal">
+<div class="slides">
+
+  <!-- SLIDE 1: Title -->
+  <section>
+    <h1 style="font-size:1.9em;">building voice agents<br>with the <span class="pop-orange">GPT<br>realtime model</span></h1>
+    <aside class="notes">Hey everyone! I built something fun and I want to show it to you. Let's jump straight into a demo.</aside>
+  </section>
+
+  <!-- SLIDE 2: DEMO -->
+  <section data-bg-peach>
+    <h1 style="font-size:3em;">DEMO</h1>
+    <br>
+    <p style="font-size:0.8em; color:#999;">
+      this is a live demo<br>
+      so obviously it <strong style="color:#E94560;">will not work</strong>
+    </p>
+    <aside class="notes">Run the demo. If it works — surprise! If it doesn't — you called it.</aside>
+  </section>
+
+  <!-- SLIDE 3: Audience poll - REST -->
+  <section data-bg-warm>
+    <p class="big-question">
+      <span class="emoji">&#129300;</span>
+      how many of you<br>know about<br><span class="pop-orange">REST APIs?</span>
+    </p>
+    <aside class="notes">Hands up! Great, most of you.</aside>
+  </section>
+
+  <!-- SLIDE 4: Audience poll - WebSocket -->
+  <section data-bg-cool>
+    <p class="big-question">
+      <span class="emoji">&#128064;</span>
+      how many of you<br>know about<br><span class="pop-blue">WebSockets?</span>
+    </p>
+    <aside class="notes">Fewer hands — totally fine. This is what makes that demo possible.</aside>
+  </section>
+
+  <!-- SLIDE 5: Audience poll - Realtime Model -->
+  <section data-bg-mint>
+    <p class="big-question">
+      <span class="emoji">&#128640;</span>
+      how many have used<br><span class="pop-green">OpenAI's<br>Realtime Model?</span>
+    </p>
+    <aside class="notes">Probably very few. By the end of this talk you'll understand exactly how it works.</aside>
+  </section>
+
+  <!-- SLIDE 6: REST vs WebSocket combined -->
+  <section>
+    <h2>quick <span class="pop-orange">refresher</span></h2>
+    <div class="analogy-row">
+      <div class="analogy-card">
+        <div class="icon">&#9993;&#65039;</div>
+        <div class="label pop-orange">REST API</div>
+        <div class="desc">
+          like sending <strong>letters</strong><br><br>
+          write, send, wait for reply<br>
+          every message is a new envelope
+        </div>
+      </div>
+      <div class="analogy-card">
+        <div class="icon">&#128222;</div>
+        <div class="label pop-blue">WebSocket</div>
+        <div class="desc">
+          like a <strong>phone call</strong><br><br>
+          dial once, line stays open<br>
+          both sides talk anytime
+        </div>
+      </div>
+    </div>
+    <aside class="notes">REST is like letters — one request, one response. WebSocket is like a phone call — connect once, both sides talk whenever. GPT Realtime uses WebSockets.</aside>
+  </section>
+
+  <!-- SLIDE 7: The old way — pipeline -->
+  <section>
+    <h2>the <span class="pop-pink">old</span> way</h2>
+    <div class="pipeline-row">
+      <div class="p-box">
+        <span class="p-icon">&#127908;</span>
+        <span class="p-label">VAD</span>
+        <span class="p-desc">detect<br>speech</span>
+      </div>
+      <div class="p-arrow">&rarr;</div>
+      <div class="p-box">
+        <span class="p-icon">&#128172;</span>
+        <span class="p-label">STT</span>
+        <span class="p-desc">speech<br>to text</span>
+      </div>
+      <div class="p-arrow">&rarr;</div>
+      <div class="p-box">
+        <span class="p-icon">&#129504;</span>
+        <span class="p-label">LLM</span>
+        <span class="p-desc">think &amp;<br>respond</span>
+      </div>
+      <div class="p-arrow">&rarr;</div>
+      <div class="p-box">
+        <span class="p-icon">&#128264;</span>
+        <span class="p-label">TTS</span>
+        <span class="p-desc">text to<br>speech</span>
+      </div>
+    </div>
+    <p style="font-size:0.65em; color:#E94560; font-weight:900; margin-top:16px;">
+      4 models. 4x latency. 4x failure points.
+    </p>
+    <aside class="notes">Before the Realtime API, building a voice agent meant chaining four systems. Each step adds latency and you lose voice nuance at the STT step.</aside>
+  </section>
+
+  <!-- SLIDE 8: The new way -->
+  <section data-bg-peach>
+    <h2>the <span class="pop-orange">new</span> way</h2>
+    <br>
+    <div class="pipeline-row">
+      <div class="p-box" style="border-color:#E94560;">
+        <span class="p-icon">&#127908;</span>
+        <span class="p-label">voice in</span>
+        <span class="p-desc">raw audio<br>from mic</span>
+      </div>
+      <div class="p-arrow">&rarr;</div>
+      <div class="p-box p-highlight" style="min-width:200px; padding:26px 32px;">
+        <span class="p-icon">&#129302;</span>
+        <span class="p-label" style="font-size:0.9em;">GPT Realtime</span>
+        <span class="p-desc">understands &amp;<br>responds natively</span>
+      </div>
+      <div class="p-arrow">&rarr;</div>
+      <div class="p-box" style="border-color:#2DC653;">
+        <span class="p-icon">&#128264;</span>
+        <span class="p-label">voice out</span>
+        <span class="p-desc">natural<br>speech</span>
+      </div>
+    </div>
+    <br>
+    <p style="font-size:0.95em; font-weight:900;">
+      one model. <span class="pop-orange">voice to voice.</span>
+    </p>
+    <aside class="notes">One model replaces the whole pipeline. Hears your voice natively. Responds with natural speech. Sub-second latency.</aside>
+  </section>
+
+  <!-- SLIDE 9: Session timeline -->
+  <section data-bg-cool>
+    <h2 style="font-size:1.5em;">a <span class="pop-blue">session</span> with GPT Realtime</h2>
+    <div class="session-timeline">
+      <div class="s-row">
+        <div class="s-num" style="background:#FF6B35;">1</div>
+        <div class="s-bar s-send">
+          <span class="s-dir">&rarr;</span>
+          <span><strong>connect</strong> &mdash; open a WebSocket to the realtime endpoint</span>
+        </div>
+      </div>
+      <div class="s-row">
+        <div class="s-num" style="background:#E94560;">2</div>
+        <div class="s-bar s-send">
+          <span class="s-dir">&rarr;</span>
+          <span><strong>session.update</strong> &mdash; configure modalities, instructions, and tools</span>
+        </div>
+      </div>
+      <div class="s-row">
+        <div class="s-num" style="background:#0077B6;">3</div>
+        <div class="s-bar s-send">
+          <span class="s-dir">&rarr;</span>
+          <span><strong>input_audio_buffer.append</strong> &mdash; stream mic audio chunks continuously</span>
+        </div>
+      </div>
+      <div class="s-row">
+        <div class="s-num" style="background:#0077B6;">4</div>
+        <div class="s-bar s-recv">
+          <span class="s-dir">&larr;</span>
+          <span><strong>response.audio.delta</strong> &mdash; receive the model's voice in chunks</span>
+        </div>
+      </div>
+      <div class="s-row">
+        <div class="s-num" style="background:#2DC653;">5</div>
+        <div class="s-bar s-tool">
+          <span class="s-dir">&larr;</span>
+          <span><strong>function_call_arguments.done</strong> &mdash; model wants to call one of your tools</span>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">The full session flow. Connect, configure, stream audio. The model streams audio back and can also send tool calls. Steps 3-5 repeat in a loop.</aside>
+  </section>
+
+  <!-- SLIDE 10: Event 1 — session.update -->
+  <section data-bg-warm>
+    <div class="event-header">
+      <h2 style="font-size:1.4em; margin:0;"><span class="pop-orange">session.update</span></h2>
+      <span class="event-dir-badge badge-send">you &rarr; model</span>
+    </div>
+    <p style="font-size:0.55em; color:#666; margin:4px 0 0 0;">configure what the model can do</p>
+    <div class="json-block">{
+  <span class="jk">"type"</span>: <span class="js">"session.update"</span>,
+  <span class="jk">"session"</span>: {
+    <span class="jk">"modalities"</span>: [<span class="js">"audio"</span>, <span class="js">"text"</span>],
+    <span class="jk">"instructions"</span>: <span class="js">"You are a helpful assistant"</span>,
+    <span class="jk">"tools"</span>: [{
+      <span class="jk">"type"</span>: <span class="js">"function"</span>,
+      <span class="jk">"name"</span>: <span class="js">"update_screen_html"</span>,
+      <span class="jk">"description"</span>: <span class="js">"Update the HTML on screen"</span>,
+      <span class="jk">"parameters"</span>: { <span class="jc">...</span> }
+    }]
+  }
+}</div>
+    <aside class="notes">First event after connecting. Set modalities, instructions, and register tools. The model uses this to decide when and how to call your tools.</aside>
+  </section>
+
+  <!-- SLIDE 11: Event 2 — input_audio_buffer.append -->
+  <section data-bg-cool>
+    <div class="event-header">
+      <h2 style="font-size:1.4em; margin:0;"><span class="pop-pink">input_audio_buffer.append</span></h2>
+      <span class="event-dir-badge badge-send">you &rarr; model</span>
+    </div>
+    <p style="font-size:0.55em; color:#666; margin:4px 0 0 0;">send chunks of your voice</p>
+    <div class="json-block">{
+  <span class="jk">"type"</span>: <span class="js">"input_audio_buffer.append"</span>,
+  <span class="jk">"audio"</span>: <span class="js">"dGhpcyBpcyBiYXNlNjQgZW5jb2RlZC..."</span>
+}
+
+<span class="jc">// raw mic audio &rarr; base64 encode &rarr; send</span>
+<span class="jc">// 24kHz, 16-bit PCM</span>
+<span class="jc">// sent continuously while the mic is on</span></div>
+    <aside class="notes">Capture audio from mic, base64 encode, send as this event. You keep sending these continuously. 24kHz, 16-bit PCM. Each chunk is about 42ms of audio.</aside>
+  </section>
+
+  <!-- SLIDE 12: Event 3 — response.audio.delta -->
+  <section data-bg-mint>
+    <div class="event-header">
+      <h2 style="font-size:1.4em; margin:0;"><span class="pop-blue">response.audio.delta</span></h2>
+      <span class="event-dir-badge badge-recv">model &rarr; you</span>
+    </div>
+    <p style="font-size:0.55em; color:#666; margin:4px 0 0 0;">the model speaks back in chunks</p>
+    <div class="json-block">{
+  <span class="jk">"type"</span>: <span class="js">"response.audio.delta"</span>,
+  <span class="jk">"delta"</span>: <span class="js">"c29tZSBiYXNlNjQgYXVkaW8gZGF0YS..."</span>
+}
+
+<span class="jc">// base64 audio chunk &rarr; decode &rarr; play on speaker</span>
+<span class="jc">// streams in real-time as the model "speaks"</span>
+<span class="jc">// you hear it before the full response is done</span></div>
+    <aside class="notes">Mirror of the previous event. Model sends audio as base64 chunks. You decode and play on speaker. Streams in real-time — you hear it as it generates.</aside>
+  </section>
+
+  <!-- SLIDE 13: Event 4 — function_call_arguments.done -->
+  <section data-bg-lavender>
+    <div class="event-header">
+      <h2 style="font-size:1.25em; margin:0;"><span class="pop-green">function_call_arguments.done</span></h2>
+      <span class="event-dir-badge badge-tool">model &rarr; you</span>
+    </div>
+    <p style="font-size:0.55em; color:#666; margin:4px 0 0 0;">the model wants to call one of your tools</p>
+    <div class="json-block">{
+  <span class="jk">"type"</span>: <span class="js">"response.function_call_arguments.done"</span>,
+  <span class="jk">"name"</span>: <span class="js">"update_screen_html"</span>,
+  <span class="jk">"arguments"</span>: <span class="js">"{\"html_code\": \"&lt;div style='...'&gt;...&lt;/div&gt;\"}"</span>
+}
+
+<span class="jc">// the model DECIDED to call this tool</span>
+<span class="jc">// you receive the name + arguments</span>
+<span class="jc">// YOUR code executes it locally</span></div>
+    <p style="font-size:0.6em; font-weight:900; margin-top:8px;">
+      <span class="pop-green">AI decides</span> what to call. <span class="pop-purple">Your code</span> executes it.
+    </p>
+    <aside class="notes">The magic event. The model heard "draw a red circle," decided to call update_screen_html, generated the HTML, sent it to you. YOUR code renders it. That's client-side tool calling.</aside>
+  </section>
+
+  <!-- SLIDE 14: Beyond drawing -->
+  <section data-bg-mint>
+    <h2>it's not just <span class="pop-green">drawing</span></h2>
+    <br>
+    <p style="font-size:0.9em; font-weight:900;">same pattern, different tools:</p>
+    <br>
+    <ul style="font-size:0.95em;">
+      <li>control smart home devices</li>
+      <li>fill out forms by voice</li>
+      <li>query databases hands-free</li>
+      <li>build multi-tool voice agents</li>
+    </ul>
+    <aside class="notes">Drawing is fun but the pattern is what matters. Swap the tool for anything. Add multiple tools and the AI picks the right one.</aside>
+  </section>
+
+  <!-- SLIDE 15: Vote for next topic -->
+  <section data-bg-cool>
+    <h2>what <span class="pop-blue">next?</span></h2>
+    <div class="analogy-row" style="flex-wrap:nowrap; gap:16px; margin-top:14px;">
+      <div class="analogy-card" style="padding:20px 18px;">
+        <div class="icon" style="font-size:1.5em;">&#128268;</div>
+        <div class="label pop-orange" style="font-size:0.95em;">MCP</div>
+        <div class="desc" style="font-size:0.5em;">model context protocol<br>& tool servers</div>
+      </div>
+      <div class="analogy-card" style="padding:20px 18px;">
+        <div class="icon" style="font-size:1.5em;">&#128992;</div>
+        <div class="label pop-blue" style="font-size:0.95em;">LangGraph</div>
+        <div class="desc" style="font-size:0.5em;">multi-agent workflows<br>& graph orchestration</div>
+      </div>
+      <div class="analogy-card" style="padding:20px 18px;">
+        <div class="icon" style="font-size:1.5em;">&#128218;</div>
+        <div class="label pop-green" style="font-size:0.95em;">Core NLP</div>
+        <div class="desc" style="font-size:0.5em;">tokenization, embeddings<br>& attention from scratch</div>
+      </div>
+      <div class="analogy-card" style="padding:20px 18px; border:3px dashed #ccc;">
+        <div class="icon" style="font-size:1.5em;">&#128227;</div>
+        <div class="label pop-pink" style="font-size:0.95em;">???</div>
+        <div class="desc" style="font-size:0.5em;">shout your<br>suggestion!</div>
+      </div>
+    </div>
+    <p style="font-size:0.6em; color:#888; margin-top:12px;">raise your hand for your pick</p>
+    <aside class="notes">Vote time! Raise hands for each option. Count votes. If there's a tie, go with the one you're more excited about.</aside>
+  </section>
+
+  <!-- SLIDE 16: Thank you -->
+  <section data-bg-warm>
+    <h1 style="font-size:3em;">
+      thanks! <span class="pop-orange">&#128075;</span>
+    </h1>
+    <br>
+    <p style="font-size:1.5em; font-weight:900;">questions?</p>
+    <aside class="notes">Thank you! Common questions: "Cost?" — audio input ~$0.06/min, output ~$0.24/min. "Interruptions?" — yes. "Latency?" — sub-second.</aside>
+  </section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    controls: false,
+    slideNumber: function(slide) {
+      var current = Reveal.getIndices(slide).h + 1;
+      var total = Reveal.getTotalSlides();
+      return [current + '/' + total];
+    },
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    center: true,
+    width: 960,
+    height: 700,
+    margin: 0.02,
+  });
+</script>
+</body>
+</html>

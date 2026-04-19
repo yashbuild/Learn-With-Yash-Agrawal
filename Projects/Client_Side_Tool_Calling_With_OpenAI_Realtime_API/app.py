@@ -18,7 +18,8 @@ st_autorefresh(interval=1000, key="file_refresh")
 # This is just a workaround for building a POC and not prefered way in production because of the way streamlit works
 def read_file():
     with open("html_display_code.txt", "r") as f:
-        return f.read().strip()
+        content = f.read().strip()
+    return content if content else "<p></p>"
 
 
 # Streamlit UI
@@ -38,7 +39,7 @@ with col1:
     if st.button("Start Agent"):
         api_key = os.getenv("OPENAI_API_KEY")
         ws_url = (
-            "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01"
+            "wss://api.openai.com/v1/realtime?model=gpt-realtime-2025-08-28"
         )
 
         st.session_state.realtime_instance = Realtime(api_key, ws_url)

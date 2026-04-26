@@ -13,6 +13,12 @@ load_dotenv()
 
 st_autorefresh(interval=1000, key="file_refresh")
 
+# Clear the display file on app startup so we always start with a blank screen
+if "initialized" not in st.session_state:
+    with open("html_display_code.txt", "w") as f:
+        f.write("")
+    st.session_state.initialized = True
+
 
 # Read content from file to display, this file is written by agent thread that runs in the background
 # This is just a workaround for building a POC and not prefered way in production because of the way streamlit works

@@ -1,0 +1,1 @@
+<h1 style='text-align: center; font-size: 60px; color: white; background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet); padding: 20px;'>🎉 Welcome to Everyone Joining Us Today! ✨🎊</h1>
